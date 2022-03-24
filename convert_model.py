@@ -8,7 +8,12 @@ if __name__ == "__main__":
     model = superpoint.SuperPoint(nms_radius=3, max_keypoints=1024).eval().to(device)
     scripted_module = torch.jit.script(model)
     scripted_module.save("models/SuperPoint_1024.pt")
-    print("SuperPoint Converted")
+    print("SuperPoint_1024 Converted")
+
+    model = superglue.SuperGlue(weights='outdoor', sinkhorn_iterations=50).eval().to(device)
+    scripted_module = torch.jit.script(model)
+    scripted_module.save("models/SuperGlue_outdoor.pt")
+    print("SuperGlue_outdoor Converted")
 
     model = netvlad.NetVLAD().eval().to(device)
     scripted_module = torch.jit.script(model)

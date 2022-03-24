@@ -8,7 +8,7 @@
 #include <opencv2/imgproc/imgproc.hpp> //for cvtColor
 #include <opencv2/features2d/features2d.hpp>
 
-#include "Extractor.h"
+#include "hloc.h"
 
 using namespace std;
 using namespace chrono;
@@ -26,17 +26,19 @@ int main()
     image.convertTo(image, CV_32FC3, 1.f / 255.f, 0);
 
     std::vector<cv::KeyPoint> kpts;
+    std::vector<float> scrs;
     cv::Mat local_desc, global_desc;
 
     auto t1 = std::chrono::high_resolution_clock::now();
 
     // put image_gray in the model
-    // use kpts and desc to receive the output
-    SuperPoint_1024(image_gray, kpts, local_desc);
+    // use kpts, scrs and desc to receive the output
+    SuperPoint_1024(image_gray, kpts, scrs, local_desc);
 
     auto t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> fp_ms = t2 - t1;
     std::cout << "extract " << kpts.size() << " keypoints, took " << fp_ms.count() << " ms, " << endl;
+    std::cout << "scores" << scrs << std::endl;
 
     t1 = std::chrono::high_resolution_clock::now();
     NetVLAD(image, global_desc);

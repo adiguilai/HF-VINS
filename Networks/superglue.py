@@ -62,8 +62,9 @@ def MLP(channels: list, do_bn=True):
 
 def normalize_keypoints(kpts, image_shape):
     """ Normalize keypoints locations based on image image_shape"""
-    _, _, height, width = image_shape
-    one = kpts.new_tensor(1)
+    height = image_shape[0]
+    width = image_shape[1]
+    one = torch.tensor(1.).to(kpts.device)
     size = torch.stack([one*width, one*height])[None]
     center = size / 2
     scaling = size.max(1, keepdim=True).values * 0.7
@@ -128,7 +129,8 @@ class AttentionalGNN(nn.Module):
         self.names = layer_names
 
     def forward(self, desc0, desc1):
-        for layer, name in zip(self.layers, self.names):
+        for i, layer in enumerate(self.layers):
+            name = self.names[i]
             if name == 'cross':
                 src0, src1 = desc1, desc0
             else:  # if name == 'self':
@@ -150,7 +152,7 @@ def log_sinkhorn_iterations(Z, log_mu, log_nu, iters: int):
 def log_optimal_transport(scores, alpha, iters: int):
     """ Perform Differentiable Optimal Transport in Log-space for stability"""
     b, m, n = scores.shape
-    one = scores.new_tensor(1)
+    one = torch.tensor(1.).to(scores.device)
     ms, ns = (m*one).to(scores), (n*one).to(scores)
 
     bins0 = alpha.expand(b, m, 1)
@@ -192,60 +194,51 @@ class SuperGlue(nn.Module):
     Networks. In CVPR, 2020. https://arxiv.org/abs/1911.11763
 
     """
-    default_config = {
-        'descriptor_dim': 256,
-        'weights': 'indoor',
-        'keypoint_encoder': [32, 64, 128, 256],
-        'GNN_layers': ['self', 'cross'] * 9,
-        'sinkhorn_iterations': 100,
-        'match_threshold': 0.2,
-    }
 
-    def __init__(self, config):
+    def __init__(self, descriptor_dim=256, weights='indoor', keypoint_encoder=[32, 64, 128, 256], GNN_layers=['self', 'cross'] * 9, sinkhorn_iterations=100, match_threshold=.2):
         super().__init__()
-        self.config = {**self.default_config, **config}
+        self.descriptor_dim = descriptor_dim
+        self.weights = weights
+        self.keypoint_encoder = keypoint_encoder
+        self.GNN_layers = GNN_layers
+        self.sinkhorn_iterations = sinkhorn_iterations
+        self.match_threshold = match_threshold
 
         self.kenc = KeypointEncoder(
-            self.config['descriptor_dim'], self.config['keypoint_encoder'])
+            self.descriptor_dim, self.keypoint_encoder)
 
         self.gnn = AttentionalGNN(
-            self.config['descriptor_dim'], self.config['GNN_layers'])
+            self.descriptor_dim, self.GNN_layers)
 
         self.final_proj = nn.Conv1d(
-            self.config['descriptor_dim'], self.config['descriptor_dim'],
+            self.descriptor_dim, self.descriptor_dim,
             kernel_size=1, bias=True)
 
         bin_score = torch.nn.Parameter(torch.tensor(1.))
         self.register_parameter('bin_score', bin_score)
 
-        assert self.config['weights'] in ['indoor', 'outdoor']
+        assert self.weights in ['indoor', 'outdoor']
         path = Path(__file__).parent
-        path = path / 'weights/superglue_{}.pth'.format(self.config['weights'])
+        path = path / 'weights/superglue_{}.pth'.format(self.weights)
         self.load_state_dict(torch.load(path))
         print('Loaded SuperGlue model (\"{}\" weights)'.format(
-            self.config['weights']))
+            self.weights))
 
-    def forward(self, data):
+    # def forword(self, kpts0, score0, desc0, imshape0, kpts1, score1, desc1, imshape1)
+    def forward(self, kpts0, scores0, desc0, imshape0, kpts1, scores1, desc1, imshape1):
         """Run SuperGlue on a pair of keypoints and descriptors"""
-        desc0, desc1 = data['descriptors0'], data['descriptors1']
-        kpts0, kpts1 = data['keypoints0'], data['keypoints1']
 
         if kpts0.shape[1] == 0 or kpts1.shape[1] == 0:  # no keypoints
             shape0, shape1 = kpts0.shape[:-1], kpts1.shape[:-1]
-            return {
-                'matches0': kpts0.new_full(shape0, -1, dtype=torch.int),
-                'matches1': kpts1.new_full(shape1, -1, dtype=torch.int),
-                'matching_scores0': kpts0.new_zeros(shape0),
-                'matching_scores1': kpts1.new_zeros(shape1),
-            }
+            return (kpts0.new_full(shape0, -1, dtype=torch.int), kpts1.new_full(shape1, -1, dtype=torch.int), kpts0.new_zeros(shape0), kpts1.new_zeros(shape1))
 
         # Keypoint normalization.
-        kpts0 = normalize_keypoints(kpts0, data['image0'].shape)
-        kpts1 = normalize_keypoints(kpts1, data['image1'].shape)
+        kpts0 = normalize_keypoints(kpts0, imshape0)
+        kpts1 = normalize_keypoints(kpts1, imshape1)
 
         # Keypoint MLP encoder.
-        desc0 = desc0 + self.kenc(kpts0, data['scores0'])
-        desc1 = desc1 + self.kenc(kpts1, data['scores1'])
+        desc0 = desc0 + self.kenc(kpts0, scores0)
+        desc1 = desc1 + self.kenc(kpts1, scores1)
 
         # Multi-layer Transformer network.
         desc0, desc1 = self.gnn(desc0, desc1)
@@ -255,29 +248,24 @@ class SuperGlue(nn.Module):
 
         # Compute matching descriptor distance.
         scores = torch.einsum('bdn,bdm->bnm', mdesc0, mdesc1)
-        scores = scores / self.config['descriptor_dim']**.5
+        scores = scores / self.descriptor_dim**.5
 
         # Run the optimal transport.
         scores = log_optimal_transport(
             scores, self.bin_score,
-            iters=self.config['sinkhorn_iterations'])
+            iters=self.sinkhorn_iterations)
 
         # Get the matches with score above "match_threshold".
         max0, max1 = scores[:, :-1, :-1].max(2), scores[:, :-1, :-1].max(1)
         indices0, indices1 = max0.indices, max1.indices
         mutual0 = arange_like(indices0, 1)[None] == indices1.gather(1, indices0)
         mutual1 = arange_like(indices1, 1)[None] == indices0.gather(1, indices1)
-        zero = scores.new_tensor(0)
+        zero = torch.tensor(0.).to(scores.device)
         mscores0 = torch.where(mutual0, max0.values.exp(), zero)
         mscores1 = torch.where(mutual1, mscores0.gather(1, indices1), zero)
-        valid0 = mutual0 & (mscores0 > self.config['match_threshold'])
+        valid0 = mutual0 & (mscores0 > self.match_threshold)
         valid1 = mutual1 & valid0.gather(1, indices1)
-        indices0 = torch.where(valid0, indices0, indices0.new_tensor(-1))
-        indices1 = torch.where(valid1, indices1, indices1.new_tensor(-1))
+        indices0 = torch.where(valid0, indices0, torch.tensor(-1).to(indices0.device))
+        indices1 = torch.where(valid1, indices1, torch.tensor(-1).to(indices1.device))
 
-        return {
-            'matches0': indices0, # use -1 for invalid match
-            'matches1': indices1, # use -1 for invalid match
-            'matching_scores0': mscores0,
-            'matching_scores1': mscores1,
-        }
+        return (indices0, indices1, mscores0, mscores1)
