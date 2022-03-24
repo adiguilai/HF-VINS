@@ -69,7 +69,7 @@ void SuperPointExtractor::operator()(const cv::Mat &image, std::vector<cv::KeyPo
 
 int main()
 {
-    SuperPointExtractor extractor("../../models/SuperPoint.pt");
+    SuperPointExtractor SuperPoint_1024("../../models/SuperPoint_1024.pt");
 
     string img_path = "../../night.jpg";
     cv::Mat image = cv::imread(img_path, cv::IMREAD_COLOR), image_gray;
@@ -84,11 +84,11 @@ int main()
 
     // put image_gray in the model
     // use kpts and desc to receive the output
-    extractor(image_gray, kpts, desc);
+    SuperPoint_1024(image_gray, kpts, desc);
 
     auto t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> fp_ms = t2 - t1;
-    std::cout << "extract took " << fp_ms.count() << " ms, " <<endl;
+    std::cout << "extract " << kpts.size() << " keypoints, took " << fp_ms.count() << " ms, " <<endl;
 
     // draw keypoints
     cv::Mat outimg1;

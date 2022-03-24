@@ -7,7 +7,7 @@ if __name__ == "__main__":
 
     model = superpoint.SuperPoint(nms_radius=3, max_keypoints=1024).eval().to(device)
     scripted_module = torch.jit.script(model)
-    scripted_module.save("models/SuperPoint.pt")
+    scripted_module.save("models/SuperPoint_1024.pt")
     print("SuperPoint Converted")
 
     model = netvlad.NetVLAD().eval().to(device)

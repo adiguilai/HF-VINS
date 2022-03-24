@@ -1,5 +1,5 @@
 # HF-VINS
-use hloc to do loop detection in VINS
+using hloc in VINS
 
 **TODO List**
 
