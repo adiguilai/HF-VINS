@@ -8,7 +8,7 @@
 #include <opencv2/imgproc/imgproc.hpp> //for cvtColor
 #include <opencv2/features2d/features2d.hpp>
 
-# include "Extractor.h"
+#include "Extractor.h"
 
 using namespace std;
 using namespace chrono;
@@ -36,25 +36,25 @@ int main()
 
     auto t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> fp_ms = t2 - t1;
-    std::cout << "extract " << kpts.size() << " keypoints, took " << fp_ms.count() << " ms, " <<endl;
-    
+    std::cout << "extract " << kpts.size() << " keypoints, took " << fp_ms.count() << " ms, " << endl;
+
     t1 = std::chrono::high_resolution_clock::now();
     NetVLAD(image, global_desc);
     t2 = std::chrono::high_resolution_clock::now();
     fp_ms = t2 - t1;
-    std::cout << "extract global_desc, took " << fp_ms.count() << " ms, " <<endl;
+    std::cout << "extract global_desc, took " << fp_ms.count() << " ms, " << endl;
 
     // draw keypoints
     cv::Mat outimg1;
-    image.convertTo(image, CV_8UC3, 255.f / 1.f, 0); //for drawKeypoints
+    image.convertTo(image, CV_8UC3, 255.f / 1.f, 0); // for drawKeypoints
     cv::drawKeypoints(image, kpts, outimg1, cv::Scalar::all(-1), cv::DrawMatchesFlags::DEFAULT);
-    cv::resize(outimg1, outimg1, cv::Size(outimg1.cols/4, outimg1.rows/4), 0, 0, cv::INTER_LINEAR);
+    cv::resize(outimg1, outimg1, cv::Size(outimg1.cols / 4, outimg1.rows / 4), 0, 0, cv::INTER_LINEAR);
     cv::imshow("SuperPoints", outimg1);
     cv::waitKey(0);
 
     // print loacl_desc shape
-    cout << "local_desc shape: "<< local_desc.cols << 'x' << local_desc.rows << endl;
-    cout << "global_desc shape: "<< global_desc.cols << 'x' << global_desc.rows << endl;
+    cout << "local_desc shape: " << local_desc.cols << 'x' << local_desc.rows << endl;
+    cout << "global_desc shape: " << global_desc.cols << 'x' << global_desc.rows << endl;
 
     return 0;
 }
