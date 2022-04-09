@@ -13,50 +13,42 @@
 using namespace std;
 using namespace chrono;
 
-int main()
-{
-    SuperPointExtractor SuperPoint_1024("../../models/SuperPoint_1024.pt");
-    NetVLADExtractor NetVLAD("../../models/NetVLAD.pt");
-
-    string img_path = "../../night.jpg";
-    cv::Mat image = cv::imread(img_path, cv::IMREAD_COLOR), image_gray;
+void readImage(const string path, cv::Mat &image, cv::Mat &image_gray) {
+    image = cv::imread(path, cv::IMREAD_COLOR);
     cv::cvtColor(image, image_gray, cv::COLOR_BGR2GRAY);
+    cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
     // to float32 Mat
     image_gray.convertTo(image_gray, CV_32FC1, 1.f / 255.f, 0);
     image.convertTo(image, CV_32FC3, 1.f / 255.f, 0);
+}
 
-    std::vector<cv::KeyPoint> kpts;
-    std::vector<float> scrs;
-    cv::Mat local_desc, global_desc;
+int main() {
+    SuperPointExtractor SuperPoint_1024("../../models/SuperPoint_1024.pt");
+    NetVLADExtractor NetVLAD("../../models/NetVLAD.pt");
+//    torch::jit::script::Module model = torch::jit::load("../../models/SuperGlue_outdoor.pt");
+    SuperGlueMatcher SuperGlue("../../models/SuperGlue_outdoor.pt");
 
-    auto t1 = std::chrono::high_resolution_clock::now();
+    cv::Mat image_1, image_gray_1, image_2, image_gray_2;
+    std::vector<cv::Point2f> kpts_1, kpts_2;
+    std::vector<float> scrs_1, scrs_2;
+    cv::Mat local_desc_1, local_desc_2, global_desc_1, global_desc_2;
 
-    // put image_gray in the model
-    // use kpts, scrs and desc to receive the output
-    SuperPoint_1024(image_gray, kpts, scrs, local_desc);
+    readImage("../../day.jpg", image_1, image_gray_1);
+    readImage("../../night.jpg", image_2, image_gray_2);
 
-    auto t2 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> fp_ms = t2 - t1;
-    std::cout << "extract " << kpts.size() << " keypoints, took " << fp_ms.count() << " ms, " << endl;
-    std::cout << "scores" << scrs << std::endl;
+    SuperPoint_1024(image_gray_1, kpts_1, scrs_1, local_desc_1);
+    SuperPoint_1024(image_gray_2, kpts_2, scrs_2, local_desc_2);
+    NetVLAD(image_1, global_desc_1);
+    NetVLAD(image_2, global_desc_2);
 
-    t1 = std::chrono::high_resolution_clock::now();
-    NetVLAD(image, global_desc);
-    t2 = std::chrono::high_resolution_clock::now();
-    fp_ms = t2 - t1;
-    std::cout << "extract global_desc, took " << fp_ms.count() << " ms, " << endl;
+    vector<int> match_01, match_10;
 
-    // draw keypoints
-    cv::Mat outimg1;
-    image.convertTo(image, CV_8UC3, 255.f / 1.f, 0); // for drawKeypoints
-    cv::drawKeypoints(image, kpts, outimg1, cv::Scalar::all(-1), cv::DrawMatchesFlags::DEFAULT);
-    cv::resize(outimg1, outimg1, cv::Size(outimg1.cols / 4, outimg1.rows / 4), 0, 0, cv::INTER_LINEAR);
-    cv::imshow("SuperPoints", outimg1);
-    cv::waitKey(0);
+    SuperGlue(kpts_1, scrs_1, local_desc_1, image_gray_1.rows, image_gray_1.cols,
+              kpts_2, scrs_2, local_desc_2, image_gray_2.rows, image_gray_2.cols,
+              match_01, match_10
+    );
 
-    // print loacl_desc shape
-    cout << "local_desc shape: " << local_desc.cols << 'x' << local_desc.rows << endl;
-    cout << "global_desc shape: " << global_desc.cols << 'x' << global_desc.rows << endl;
+    cout << match_01 << endl;
 
     return 0;
 }
