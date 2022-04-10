@@ -47,7 +47,8 @@ public:
             cv::Mat &desc1,
             int height1, int width1,
             std::vector<int> &match_index_01,
-            std::vector<int> &match_index_10
+            std::vector<int> &match_index_10,
+            std::vector<cv::DMatch> &match
     );
 };
 // What should matcher return??
