@@ -29,6 +29,7 @@ void SuperPointExtractor::operator()(
             torch::kCUDA);
 
     // put image into model
+    torch::NoGradGuard no_grad;
     std::vector<torch::jit::IValue> torch_inputs;
     torch::jit::IValue torch_outputs;
     torch_inputs.emplace_back(img_tensor);
@@ -75,6 +76,7 @@ void NetVLADExtractor::operator()(
             torch::kCUDA);
 
     // put image into model
+    torch::NoGradGuard no_grad;
     std::vector<torch::jit::IValue> torch_inputs;
     torch::jit::IValue torch_outputs;
     torch_inputs.emplace_back(img_tensor);
@@ -97,8 +99,6 @@ void SuperGlueMatcher::operator()(
         std::vector<float> &scrs1,
         cv::Mat &desc1,
         int height1, int width1,
-        std::vector<int> &match_index_01,
-        std::vector<int> &match_index_10,
         std::vector<cv::DMatch> &match
 ) {
     auto k0 = torch::from_blob(kpts0.data(), {1, int(kpts0.size()), 2}).to(torch::kCUDA);
@@ -110,6 +110,7 @@ void SuperGlueMatcher::operator()(
     auto size0 = torch::tensor({height0, width0}).to(torch::kCUDA);
     auto size1 = torch::tensor({height1, width1}).to(torch::kCUDA);
 
+    torch::NoGradGuard no_grad;
     std::vector<torch::jit::IValue> torch_inputs;
     torch::jit::IValue torch_outputs;
 
@@ -127,7 +128,6 @@ void SuperGlueMatcher::operator()(
     auto match_01 = outputs_tuple->elements()[0].toTensor();
     auto match_score = outputs_tuple->elements()[2].toTensor();
     for (int i = 0; i < match_01.sizes()[1]; i++) {
-        match_index_01.push_back(match_01[0][i].item<int>());
         if (match_01[0][i].item<int>() > -1)
             match.push_back(cv::DMatch(i, match_01[0][i].item<int>(), 1-match_score[0][i].item<float>()));
     }

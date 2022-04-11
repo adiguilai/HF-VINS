@@ -7,7 +7,6 @@
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp> //for cvtColor
 #include <opencv2/features2d/features2d.hpp>
-#include <armadillo>
 
 #include "hloc.h"
 
@@ -42,14 +41,13 @@ int main() {
     NetVLAD(image_1, global_desc_1);
     NetVLAD(image_2, global_desc_2);
 
-    vector<int> match_01, match_10;
     std::vector<cv::DMatch> match;
 
     auto t1 = std::chrono::high_resolution_clock::now();
 
     SuperGlue(kpts_1, scrs_1, local_desc_1, image_gray_1.rows, image_gray_1.cols,
               kpts_2, scrs_2, local_desc_2, image_gray_2.rows, image_gray_2.cols,
-              match_01, match_10, match
+              match
     );
     auto t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> fp_ms = t2 - t1;
@@ -69,7 +67,7 @@ int main() {
     cv::Mat out_image;
     cv::drawMatches(image_1, kpts1, image_2, kpts2, match, out_image);
     cv::resize(out_image, out_image, cv::Size(), 0.3, 0.3);
-    cv::imshow("all matches", out_image);
+    cv::imshow("matches", out_image);
     cv::waitKey(0);
 
     return 0;
