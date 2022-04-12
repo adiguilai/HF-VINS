@@ -18,12 +18,13 @@ else ()
     message(FATAL_ERROR "Need to specify Torch path, e.g., pytorch/torch/share/cmake/Torch ")
 endif ()
 
+find_package(PythonInterp REQUIRED)
 find_package(Torch REQUIRED)
-
 find_package(OpenCV REQUIRED)
-include_directories(${OPENCV_DIRS})
 
 target_link_libraries(hloc ${TORCH_LIBRARIES} ${OpenCV_LIBS})
 
-add_executable(test test.cpp)
+add_executable(test
+        test.cpp
+        )
 target_link_libraries(test hloc)

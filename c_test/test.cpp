@@ -1,8 +1,6 @@
 #include <iostream>
 #include <chrono>
-
-// #include <torch/script.h>
-
+#include "utility/tic_toc.h"
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp> //for cvtColor
@@ -38,17 +36,13 @@ int main() {
 
     std::vector<int> match_index;
     std::vector<float> match_score;
-    auto t1 = std::chrono::high_resolution_clock::now();
-
+    TicToc t_match;
     SuperGlue(kpts_1, scrs_1, local_desc_1, image_gray_1.rows, image_gray_1.cols,
               kpts_2, scrs_2, local_desc_2, image_gray_2.rows, image_gray_2.cols,
               match_index, match_score
     );
-    auto t2 = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double, std::milli> fp_ms = t2 - t1;
-    std::cout << "sim " << global_desc_1.dot(global_desc_2) << std::endl;
-    std::cout << "match " << match_index.size() << " pairs, took " << fp_ms.count() << " ms, " << endl;
-
+    printf("match %zu pairs, took %f ms\n", match_index.size(), t_match.toc());
+    printf("cos sim: %f\n", global_desc_1.dot(global_desc_2));
 
     vector<cv::KeyPoint> kpts1, kpts2;
     vector<cv::DMatch> match;
