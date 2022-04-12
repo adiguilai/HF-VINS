@@ -8,7 +8,7 @@
 #include <opencv2/imgproc/imgproc.hpp> //for cvtColor
 #include <opencv2/features2d/features2d.hpp>
 
-#include "hloc.h"
+#include "hloc/hloc.h"
 
 using namespace std;
 using namespace chrono;
@@ -41,24 +41,31 @@ int main() {
     NetVLAD(image_1, global_desc_1);
     NetVLAD(image_2, global_desc_2);
 
-    std::vector<cv::DMatch> match;
-
+    std::vector<int> match_index;
+    std::vector<float> match_score;
     auto t1 = std::chrono::high_resolution_clock::now();
 
     SuperGlue(kpts_1, scrs_1, local_desc_1, image_gray_1.rows, image_gray_1.cols,
               kpts_2, scrs_2, local_desc_2, image_gray_2.rows, image_gray_2.cols,
-              match
+              match_index, match_score
     );
     auto t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double, std::milli> fp_ms = t2 - t1;
-    std::cout << "match " << match.size() << " pairs, took " << fp_ms.count() << " ms, " << endl;
+    std::cout << "sim " << global_desc_1.dot(global_desc_2) << std::endl;
+    std::cout << "match " << match_index.size() << " pairs, took " << fp_ms.count() << " ms, " << endl;
+
 
     vector<cv::KeyPoint> kpts1, kpts2;
+    vector<cv::DMatch> match;
     for (auto & i : kpts_1) {
         kpts1.push_back(cv::KeyPoint(i, 1.f));
     }
     for (auto & i : kpts_2) {
         kpts2.push_back(cv::KeyPoint(i, 1.f));
+    }
+    for (int i = 0; i < match_index.size(); i++){
+        if (match_index[i] > -1)
+            match.push_back(cv::DMatch(i, match_index[i], 1-match_score[i]));
     }
 
     image_1.convertTo(image_1, CV_8UC3, 255.f, 0);

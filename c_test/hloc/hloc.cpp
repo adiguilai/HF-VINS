@@ -99,7 +99,8 @@ void SuperGlueMatcher::operator()(
         std::vector<float> &scrs1,
         cv::Mat &desc1,
         int height1, int width1,
-        std::vector<cv::DMatch> &match
+        std::vector<int> &match_index,
+        std::vector<float> &match_score
 ) {
     auto k0 = torch::from_blob(kpts0.data(), {1, int(kpts0.size()), 2}).to(torch::kCUDA);
     auto k1 = torch::from_blob(kpts1.data(), {1, int(kpts1.size()), 2}).to(torch::kCUDA);
@@ -125,10 +126,10 @@ void SuperGlueMatcher::operator()(
 
     torch_outputs = model.forward(torch_inputs);
     auto outputs_tuple = torch_outputs.toTuple();
-    auto match_01 = outputs_tuple->elements()[0].toTensor();
-    auto match_score = outputs_tuple->elements()[2].toTensor();
-    for (int i = 0; i < match_01.sizes()[1]; i++) {
-        if (match_01[0][i].item<int>() > -1)
-            match.push_back(cv::DMatch(i, match_01[0][i].item<int>(), 1-match_score[0][i].item<float>()));
+    auto index = outputs_tuple->elements()[0].toTensor();
+    auto score = outputs_tuple->elements()[2].toTensor();
+    for (int i = 0; i < index.sizes()[1]; i++) {
+        match_index.push_back(index[0][i].item<int>());
+        match_score.push_back(score[0][i].item<float>());
     }
 }

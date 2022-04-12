@@ -46,7 +46,8 @@ public:
             std::vector<float> &scrs1,
             cv::Mat &desc1,
             int height1, int width1,
-            std::vector<cv::DMatch> &match
+            std::vector<int> &match_index,
+            std::vector<float> &match_score
     );
 };
 // What should matcher return??
