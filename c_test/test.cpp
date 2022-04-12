@@ -16,10 +16,6 @@ using namespace chrono;
 void readImage(const string path, cv::Mat &image, cv::Mat &image_gray) {
     image = cv::imread(path, cv::IMREAD_COLOR);
     cv::cvtColor(image, image_gray, cv::COLOR_BGR2GRAY);
-//    cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
-    // to float32 Mat
-    image_gray.convertTo(image_gray, CV_32FC1, 1.f / 255.f, 0);
-    image.convertTo(image, CV_32FC3, 1.f / 255.f, 0);
 }
 
 int main() {
@@ -33,8 +29,8 @@ int main() {
     std::vector<float> scrs_1, scrs_2;
     cv::Mat local_desc_1, local_desc_2, global_desc_1, global_desc_2;
 
-    readImage("../../day.jpg", image_1, image_gray_1);
-    readImage("../../night.jpg", image_2, image_gray_2);
+    readImage("../../day2.jpg", image_1, image_gray_1);
+    readImage("../../day.jpg", image_2, image_gray_2);
 
     SuperPoint_1024(image_gray_1, kpts_1, scrs_1, local_desc_1);
     SuperPoint_1024(image_gray_2, kpts_2, scrs_2, local_desc_2);
@@ -58,18 +54,15 @@ int main() {
     vector<cv::KeyPoint> kpts1, kpts2;
     vector<cv::DMatch> match;
     for (auto & i : kpts_1) {
-        kpts1.push_back(cv::KeyPoint(i, 1.f));
+        kpts1.emplace_back(i, 1.f);
     }
     for (auto & i : kpts_2) {
-        kpts2.push_back(cv::KeyPoint(i, 1.f));
+        kpts2.emplace_back(i, 1.f);
     }
     for (int i = 0; i < match_index.size(); i++){
         if (match_index[i] > -1)
-            match.push_back(cv::DMatch(i, match_index[i], 1-match_score[i]));
+            match.emplace_back(i, match_index[i], 1-match_score[i]);
     }
-
-    image_1.convertTo(image_1, CV_8UC3, 255.f, 0);
-    image_2.convertTo(image_2, CV_8UC3, 255.f, 0);
 
     cv::Mat out_image;
     cv::drawMatches(image_1, kpts1, image_2, kpts2, match, out_image);

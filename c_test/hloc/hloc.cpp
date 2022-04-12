@@ -8,7 +8,7 @@ hloc::hloc(const std::string &model_path) {
 
 void SuperPointExtractor::operator()(
         const cv::Mat &image,
-        std::vector<cv::Point2f> &kpts,
+        std::vector <cv::Point2f> &kpts,
         std::vector<float> &scrs,
         cv::Mat &desc
 ) {
@@ -16,21 +16,30 @@ void SuperPointExtractor::operator()(
     // resize image if size > max size (1024)
     // record the original size
     float scale = 1;
-    int img_width_ori = image_gray.cols;
-    int img_height_ori = image_gray.rows;
+    int img_width_ori = image_gray.cols, img_width_new = image_gray.cols;
+    int img_height_ori = image_gray.rows, img_height_new = image_gray.rows;
     if (std::max(img_width_ori, img_height_ori) > 1024) {
         scale = 1024.f / std::max(img_width_ori, img_height_ori);
-        int img_width_new = img_width_ori * scale;
-        int img_height_new = img_height_ori * scale;
+        img_width_new = img_width_ori * scale;
+        img_height_new = img_height_ori * scale;
         cv::resize(image_gray, image_gray, cv::Size(img_width_new, img_height_new), 0, 0, cv::INTER_LINEAR);
     }
     // convert cv::Mat to torch::Tensor [batch x C x H x W]
-    torch::Tensor img_tensor = torch::from_blob(image_gray.data, {1, 1, image_gray.rows, image_gray.cols}).to(
+    image_gray = cv::dnn::blobFromImage
+            (
+                    image_gray, 1.f / 255.f, // scale factor
+                    cv::Size(), // spatial size for output image
+                    cv::Scalar(), // mean
+                    true, // swapRB: BGR to RGB
+                    false, // crop
+                    CV_32F // Depth of output blob. Choose CV_32F or CV_8U.
+            );
+    torch::Tensor img_tensor = torch::from_blob(image_gray.data, {1, 1, img_height_new, img_width_new}).to(
             torch::kCUDA);
 
     // put image into model
     torch::NoGradGuard no_grad;
-    std::vector<torch::jit::IValue> torch_inputs;
+    std::vector <torch::jit::IValue> torch_inputs;
     torch::jit::IValue torch_outputs;
     torch_inputs.emplace_back(img_tensor);
     torch_outputs = model.forward(torch_inputs);
@@ -59,29 +68,38 @@ void NetVLADExtractor::operator()(
         const cv::Mat &image,
         cv::Mat &desc
 ) {
-    cv::Mat image_gray = image.clone();
+    cv::Mat _image = image.clone();
     // resize image if size > max size (1024)
     // record the original size
     float scale = 1;
-    int img_width_ori = image_gray.cols;
-    int img_height_ori = image_gray.rows;
+    int img_width_ori = _image.cols, img_width_new = _image.cols;
+    int img_height_ori = _image.rows, img_height_new = _image.rows;
     if (std::max(img_width_ori, img_height_ori) > 1024) {
         scale = 1024.f / std::max(img_width_ori, img_height_ori);
-        int img_width_new = img_width_ori * scale;
-        int img_height_new = img_height_ori * scale;
-        cv::resize(image_gray, image_gray, cv::Size(img_width_new, img_height_new), 0, 0, cv::INTER_LINEAR);
+        img_width_new = img_width_ori * scale;
+        img_height_new = img_height_ori * scale;
+        cv::resize(_image, _image, cv::Size(img_width_new, img_height_new), 0, 0, cv::INTER_LINEAR);
     }
     // convert cv::Mat to torch::Tensor [batch x C x H x W]
-    torch::Tensor img_tensor = torch::from_blob(image_gray.data, {1, 3, image_gray.rows, image_gray.cols}).to(
+    _image = cv::dnn::blobFromImage
+            (
+                    _image, 1.f / 255.f, // scale factor
+                    cv::Size(), // spatial size for output image
+                    cv::Scalar(), // mean
+                    true, // swapRB: BGR to RGB
+                    false, // crop
+                    CV_32F // Depth of output blob. Choose CV_32F or CV_8U.
+            );
+    torch::Tensor img_tensor = torch::from_blob(_image.data, {1, 3, img_height_new, img_width_new}).to(
             torch::kCUDA);
 
     // put image into model
     torch::NoGradGuard no_grad;
-    std::vector<torch::jit::IValue> torch_inputs;
+    std::vector <torch::jit::IValue> torch_inputs;
     torch::jit::IValue torch_outputs;
     torch_inputs.emplace_back(img_tensor);
-    torch_outputs = model.forward(torch_inputs);                 // it defult set no grad
-    auto descriptors = torch_outputs.toTensor().to(torch::kCPU); // 256 x N
+    torch_outputs = model.forward(torch_inputs);
+    auto descriptors = torch_outputs.toTensor().to(torch::kCPU);
 
     // convert torch::Tensor to cv::Mat???
     cv::Mat mat_desc(descriptors.size(0), descriptors.size(1), CV_32FC1);
@@ -91,11 +109,11 @@ void NetVLADExtractor::operator()(
 
 
 void SuperGlueMatcher::operator()(
-        std::vector<cv::Point2f> &kpts0,
+        std::vector <cv::Point2f> &kpts0,
         std::vector<float> &scrs0,
         cv::Mat &desc0,
         int height0, int width0,
-        std::vector<cv::Point2f> &kpts1,
+        std::vector <cv::Point2f> &kpts1,
         std::vector<float> &scrs1,
         cv::Mat &desc1,
         int height1, int width1,
@@ -112,17 +130,17 @@ void SuperGlueMatcher::operator()(
     auto size1 = torch::tensor({height1, width1}).to(torch::kCUDA);
 
     torch::NoGradGuard no_grad;
-    std::vector<torch::jit::IValue> torch_inputs;
+    std::vector <torch::jit::IValue> torch_inputs;
     torch::jit::IValue torch_outputs;
 
-    torch_inputs.push_back(k0);
-    torch_inputs.push_back(s0);
-    torch_inputs.push_back(d0);
-    torch_inputs.push_back(size0);
-    torch_inputs.push_back(k1);
-    torch_inputs.push_back(s1);
-    torch_inputs.push_back(d1);
-    torch_inputs.push_back(size1);
+    torch_inputs.emplace_back(k0);
+    torch_inputs.emplace_back(s0);
+    torch_inputs.emplace_back(d0);
+    torch_inputs.emplace_back(size0);
+    torch_inputs.emplace_back(k1);
+    torch_inputs.emplace_back(s1);
+    torch_inputs.emplace_back(d1);
+    torch_inputs.emplace_back(size1);
 
     torch_outputs = model.forward(torch_inputs);
     auto outputs_tuple = torch_outputs.toTuple();

@@ -3,6 +3,7 @@
 #include <opencv2/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/dnn/dnn.hpp>
 
 class hloc {
 public:
