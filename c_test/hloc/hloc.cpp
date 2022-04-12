@@ -7,7 +7,7 @@ hloc::hloc(const std::string &model_path) {
 }
 
 void SuperPointExtractor::operator()(
-        const cv::Mat &image,
+        const cv::Mat &image, // CV_8UC1
         std::vector <cv::Point2f> &kpts,
         std::vector<float> &scrs,
         cv::Mat &desc
@@ -65,8 +65,8 @@ void SuperPointExtractor::operator()(
 }
 
 void NetVLADExtractor::operator()(
-        const cv::Mat &image,
-        cv::Mat &desc
+        const cv::Mat &image, // CV_8UC3
+        cv::Mat &desc // 1x4096
 ) {
     cv::Mat _image = image.clone();
     // resize image if size > max size (1024)

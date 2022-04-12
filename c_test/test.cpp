@@ -21,7 +21,6 @@ void readImage(const string path, cv::Mat &image, cv::Mat &image_gray) {
 int main() {
     SuperPointExtractor SuperPoint_1024("../../models/SuperPoint_1024.pt");
     NetVLADExtractor NetVLAD("../../models/NetVLAD.pt");
-//    torch::jit::script::Module model = torch::jit::load("../../models/SuperGlue_outdoor.pt");
     SuperGlueMatcher SuperGlue("../../models/SuperGlue_outdoor.pt");
 
     cv::Mat image_1, image_gray_1, image_2, image_gray_2;
@@ -29,7 +28,7 @@ int main() {
     std::vector<float> scrs_1, scrs_2;
     cv::Mat local_desc_1, local_desc_2, global_desc_1, global_desc_2;
 
-    readImage("../../day2.jpg", image_1, image_gray_1);
+    readImage("../../night.jpg", image_1, image_gray_1);
     readImage("../../day.jpg", image_2, image_gray_2);
 
     SuperPoint_1024(image_gray_1, kpts_1, scrs_1, local_desc_1);
