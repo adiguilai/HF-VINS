@@ -1,17 +1,21 @@
 #include "hloc.h"
 
-hloc::hloc(const std::string &model_path) {
-    // load model
-    model = torch::jit::load(model_path);
-    std::cout << "finish load " << model_path << std::endl;
+SuperPoint &SuperPoint::Get() {
+    static SuperPoint instance;
+    return instance;
 }
 
-void SuperPointExtractor::operator()(
-        const cv::Mat &image, // CV_8UC1
-        std::vector <cv::Point2f> &kpts,
-        std::vector<float> &scrs,
-        cv::Mat &desc
-) {
+SuperPoint::SuperPoint() {
+    TicToc t_load;
+    model = torch::jit::load(SuperPointPath);
+    std::cout << "Load " << SuperPointPath << " in " << t_load.toc() << "ms" << std::endl;
+}
+
+void SuperPoint::Extract(const cv::Mat &image, std::vector<cv::Point2f> &kpts, std::vector<float> &scrs, cv::Mat &desc) {
+    return Get().IExtract(image, kpts, scrs, desc);
+}
+
+void SuperPoint::IExtract(const cv::Mat &image, std::vector<cv::Point2f> &kpts, std::vector<float> &scrs, cv::Mat &desc) {
     cv::Mat image_gray = image.clone();
     // resize image if size > max size (1024)
     // record the original size
@@ -39,7 +43,7 @@ void SuperPointExtractor::operator()(
 
     // put image into model
     torch::NoGradGuard no_grad;
-    std::vector <torch::jit::IValue> torch_inputs;
+    std::vector<torch::jit::IValue> torch_inputs;
     torch::jit::IValue torch_outputs;
     torch_inputs.emplace_back(img_tensor);
     torch_outputs = model.forward(torch_inputs);
@@ -64,10 +68,23 @@ void SuperPointExtractor::operator()(
     desc = mat_desc;
 }
 
-void NetVLADExtractor::operator()(
-        const cv::Mat &image, // CV_8UC3
-        cv::Mat &desc // 1x4096
-) {
+
+NetVLAD &NetVLAD::Get() {
+    static NetVLAD instance;
+    return instance;
+}
+
+NetVLAD::NetVLAD() {
+    TicToc t_load;
+    model = torch::jit::load(NetVLADPath);
+    std::cout << "Load " << NetVLADPath << " in " << t_load.toc() << "ms" << std::endl;
+}
+
+void NetVLAD::Extract(const cv::Mat &image, cv::Mat &desc) {
+    return Get().IExtract(image, desc);
+}
+
+void NetVLAD::IExtract(const cv::Mat &image, cv::Mat &desc) {
     cv::Mat _image = image.clone();
     // resize image if size > max size (1024)
     // record the original size
@@ -95,7 +112,7 @@ void NetVLADExtractor::operator()(
 
     // put image into model
     torch::NoGradGuard no_grad;
-    std::vector <torch::jit::IValue> torch_inputs;
+    std::vector<torch::jit::IValue> torch_inputs;
     torch::jit::IValue torch_outputs;
     torch_inputs.emplace_back(img_tensor);
     torch_outputs = model.forward(torch_inputs);
@@ -108,18 +125,28 @@ void NetVLADExtractor::operator()(
 }
 
 
-void SuperGlueMatcher::operator()(
-        std::vector <cv::Point2f> &kpts0,
-        std::vector<float> &scrs0,
-        cv::Mat &desc0,
-        int height0, int width0,
-        std::vector <cv::Point2f> &kpts1,
-        std::vector<float> &scrs1,
-        cv::Mat &desc1,
-        int height1, int width1,
-        std::vector<int> &match_index,
-        std::vector<float> &match_score
-) {
+SuperGlue &SuperGlue::Get() {
+    static SuperGlue instance;
+    return instance;
+}
+
+SuperGlue::SuperGlue() {
+    TicToc t_load;
+    model = torch::jit::load(SuperGluePath);
+    std::cout << "Load " << SuperGluePath << " in " << t_load.toc() << "ms" << std::endl;
+}
+
+void SuperGlue::Match(std::vector<cv::Point2f> &kpts0, std::vector<float> &scrs0, cv::Mat &desc0, int height0, int width0,
+                 std::vector<cv::Point2f> &kpts1, std::vector<float> &scrs1, cv::Mat &desc1, int height1, int width1,
+                 std::vector<int> &match_index, std::vector<float> &match_score) {
+    return Get().IMatch(kpts0, scrs0, desc0, height0, width0,
+                          kpts1, scrs1, desc1, height1, width1,
+                          match_index, match_score);
+}
+
+void SuperGlue::IMatch(std::vector<cv::Point2f> &kpts0, std::vector<float> &scrs0, cv::Mat &desc0, int height0, int width0,
+                  std::vector<cv::Point2f> &kpts1, std::vector<float> &scrs1, cv::Mat &desc1, int height1, int width1,
+                  std::vector<int> &match_index, std::vector<float> &match_score) {
     auto k0 = torch::from_blob(kpts0.data(), {1, int(kpts0.size()), 2}).to(torch::kCUDA);
     auto k1 = torch::from_blob(kpts1.data(), {1, int(kpts1.size()), 2}).to(torch::kCUDA);
     auto s0 = torch::from_blob(scrs0.data(), {1, int(scrs0.size())}).to(torch::kCUDA);
@@ -130,7 +157,7 @@ void SuperGlueMatcher::operator()(
     auto size1 = torch::tensor({height1, width1}).to(torch::kCUDA);
 
     torch::NoGradGuard no_grad;
-    std::vector <torch::jit::IValue> torch_inputs;
+    std::vector<torch::jit::IValue> torch_inputs;
     torch::jit::IValue torch_outputs;
 
     torch_inputs.emplace_back(k0);

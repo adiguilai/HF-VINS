@@ -1,5 +1,4 @@
 #include <iostream>
-#include <chrono>
 #include "utility/tic_toc.h"
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
@@ -9,7 +8,6 @@
 #include "hloc/hloc.h"
 
 using namespace std;
-using namespace chrono;
 
 void readImage(const string path, cv::Mat &image, cv::Mat &image_gray) {
     image = cv::imread(path, cv::IMREAD_COLOR);
@@ -17,9 +15,9 @@ void readImage(const string path, cv::Mat &image, cv::Mat &image_gray) {
 }
 
 int main() {
-    SuperPointExtractor SuperPoint_1024("../../models/SuperPoint_1024.pt");
-    NetVLADExtractor NetVLAD("../../models/NetVLAD.pt");
-    SuperGlueMatcher SuperGlue("../../models/SuperGlue_outdoor.pt");
+//    SuperPointExtractor SuperPoint_1024("../../models/SuperPoint_1024.pt");
+//    NetVLADExtractor NetVLAD("../../models/NetVLAD.pt");
+//    SuperGlueMatcher SuperGlue("../../models/SuperGlue_outdoor.pt");
 
     cv::Mat image_1, image_gray_1, image_2, image_gray_2;
     std::vector<cv::Point2f> kpts_1, kpts_2;
@@ -29,19 +27,19 @@ int main() {
     readImage("../../night.jpg", image_1, image_gray_1);
     readImage("../../day.jpg", image_2, image_gray_2);
 
-    SuperPoint_1024(image_gray_1, kpts_1, scrs_1, local_desc_1);
-    SuperPoint_1024(image_gray_2, kpts_2, scrs_2, local_desc_2);
-    NetVLAD(image_1, global_desc_1);
-    NetVLAD(image_2, global_desc_2);
+    SuperPoint::Extract(image_gray_1, kpts_1, scrs_1, local_desc_1);
+    SuperPoint::Extract(image_gray_2, kpts_2, scrs_2, local_desc_2);
+    NetVLAD::Extract(image_1, global_desc_1);
+    NetVLAD::Extract(image_2, global_desc_2);
 
     std::vector<int> match_index;
     std::vector<float> match_score;
     TicToc t_match;
-    SuperGlue(kpts_1, scrs_1, local_desc_1, image_gray_1.rows, image_gray_1.cols,
+    SuperGlue::Match(kpts_1, scrs_1, local_desc_1, image_gray_1.rows, image_gray_1.cols,
               kpts_2, scrs_2, local_desc_2, image_gray_2.rows, image_gray_2.cols,
               match_index, match_score
     );
-    printf("match %zu pairs, took %f ms\n", match_index.size(), t_match.toc());
+    printf("match took %f ms\n", t_match.toc());
     printf("cos sim: %f\n", global_desc_1.dot(global_desc_2));
 
     vector<cv::KeyPoint> kpts1, kpts2;
