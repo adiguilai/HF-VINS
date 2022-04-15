@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 3.15)
 project(test)
 
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CUDA_COMPILER  /usr/local/cuda-11.6/bin/nvcc)
 find_package(CUDA)
 
 # set your own libtorch path
