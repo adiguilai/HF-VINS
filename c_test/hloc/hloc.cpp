@@ -1,6 +1,6 @@
 #include "hloc.h"
 
-SuperPoint &SuperPoint::Get() {
+SuperPoint &SuperPoint::self() {
     static SuperPoint instance;
     return instance;
 }
@@ -12,7 +12,7 @@ SuperPoint::SuperPoint() {
 }
 
 void SuperPoint::Extract(const cv::Mat &image, std::vector<cv::Point2f> &kpts, std::vector<float> &scrs, cv::Mat &desc) {
-    return Get().IExtract(image, kpts, scrs, desc);
+    self().IExtract(image, kpts, scrs, desc);
 }
 
 void SuperPoint::IExtract(const cv::Mat &image, std::vector<cv::Point2f> &kpts, std::vector<float> &scrs, cv::Mat &desc) {
@@ -56,7 +56,7 @@ void SuperPoint::IExtract(const cv::Mat &image, std::vector<cv::Point2f> &kpts, 
     keypoints = (keypoints / scale).round();
     // convert torch::Tensor to std::vector<cv::KeyPoint>
     for (int i = 0; i < keypoints.size(0); i++) {
-        kpts.push_back(cv::Point2f(keypoints[i][0].item<float>(), keypoints[i][1].item<float>()));
+        kpts.emplace_back(keypoints[i][0].item<float>(), keypoints[i][1].item<float>());
     }
     // convert torch::Tensor to std::vector<std::float>???
     for (int i = 0; i < scores.size(0); i++) {
@@ -69,7 +69,7 @@ void SuperPoint::IExtract(const cv::Mat &image, std::vector<cv::Point2f> &kpts, 
 }
 
 
-NetVLAD &NetVLAD::Get() {
+NetVLAD &NetVLAD::self() {
     static NetVLAD instance;
     return instance;
 }
@@ -81,7 +81,7 @@ NetVLAD::NetVLAD() {
 }
 
 void NetVLAD::Extract(const cv::Mat &image, cv::Mat &desc) {
-    return Get().IExtract(image, desc);
+    self().IExtract(image, desc);
 }
 
 void NetVLAD::IExtract(const cv::Mat &image, cv::Mat &desc) {
@@ -125,7 +125,7 @@ void NetVLAD::IExtract(const cv::Mat &image, cv::Mat &desc) {
 }
 
 
-SuperGlue &SuperGlue::Get() {
+SuperGlue &SuperGlue::self() {
     static SuperGlue instance;
     return instance;
 }
@@ -139,9 +139,9 @@ SuperGlue::SuperGlue() {
 void SuperGlue::Match(std::vector<cv::Point2f> &kpts0, std::vector<float> &scrs0, cv::Mat &desc0, int height0, int width0,
                  std::vector<cv::Point2f> &kpts1, std::vector<float> &scrs1, cv::Mat &desc1, int height1, int width1,
                  std::vector<int> &match_index, std::vector<float> &match_score) {
-    return Get().IMatch(kpts0, scrs0, desc0, height0, width0,
-                          kpts1, scrs1, desc1, height1, width1,
-                          match_index, match_score);
+    self().IMatch(kpts0, scrs0, desc0, height0, width0,
+                  kpts1, scrs1, desc1, height1, width1,
+                  match_index, match_score);
 }
 
 void SuperGlue::IMatch(std::vector<cv::Point2f> &kpts0, std::vector<float> &scrs0, cv::Mat &desc0, int height0, int width0,
@@ -177,4 +177,69 @@ void SuperGlue::IMatch(std::vector<cv::Point2f> &kpts0, std::vector<float> &scrs
         match_index.push_back(index[0][i].item<int>());
         match_score.push_back(score[0][i].item<float>());
     }
+}
+
+UltraPoint &UltraPoint::self() {
+    static UltraPoint instance;
+    return instance;
+}
+
+UltraPoint::UltraPoint() {
+    TicToc t_load;
+    model = torch::jit::load(UltraPointPath);
+    std::cout << "Load " << UltraPointPath << " in " << t_load.toc() << "ms" << std::endl;
+}
+
+void UltraPoint::Extract(const cv::Mat &image, std::vector<cv::Point2f> &kpts, std::vector<float> &scrs, cv::Mat &desc) {
+    self().IExtract(image, kpts, scrs, desc);
+}
+
+void UltraPoint::IExtract(const cv::Mat &image, std::vector<cv::Point2f> &kpts, std::vector<float> &scrs,
+                          cv::Mat &desc) {
+    cv::Mat image_gray = image.clone();
+    auto keypoints_tensor = torch::from_blob(kpts.data(), {1, int(kpts.size()), 2}).to(torch::kCUDA);
+    // resize image if size > max size (1024)
+    // record the original size
+    float scale = 1;
+    int img_width_ori = image_gray.cols, img_width_new = image_gray.cols;
+    int img_height_ori = image_gray.rows, img_height_new = image_gray.rows;
+    if (std::max(img_width_ori, img_height_ori) > 1024) {
+        scale = 1024.f / std::max(img_width_ori, img_height_ori);
+        img_width_new = img_width_ori * scale;
+        img_height_new = img_height_ori * scale;
+        cv::resize(image_gray, image_gray, cv::Size(img_width_new, img_height_new), 0, 0, cv::INTER_LINEAR);
+        keypoints_tensor = (keypoints_tensor * scale).round();
+    }
+    // convert cv::Mat to torch::Tensor [batch x C x H x W]
+    image_gray = cv::dnn::blobFromImage
+            (
+                    image_gray, 1.f / 255.f, // scale factor
+                    cv::Size(), // spatial size for output image
+                    cv::Scalar(), // mean
+                    true, // swapRB: BGR to RGB
+                    false, // crop
+                    CV_32F // Depth of output blob. Choose CV_32F or CV_8U.
+            );
+    torch::Tensor img_tensor = torch::from_blob(image_gray.data, {1, 1, img_height_new, img_width_new}).to(
+            torch::kCUDA);
+
+    // put image into model
+    torch::NoGradGuard no_grad;
+    std::vector<torch::jit::IValue> torch_inputs;
+    torch::jit::IValue torch_outputs;
+    torch_inputs.emplace_back(img_tensor);
+    torch_inputs.emplace_back(keypoints_tensor.to(torch::kLong));
+    torch_outputs = model.forward(torch_inputs);
+    auto outputs_tuple = torch_outputs.toTuple();
+    auto scores = outputs_tuple->elements()[0].toTensorVector()[0].to(torch::kCPU);
+    auto descriptors = outputs_tuple->elements()[1].toTensorVector()[0].to(torch::kCPU); // 256 x N
+
+    // convert torch::Tensor to std::vector<std::float>
+    for (int i = 0; i < scores.size(0); i++) {
+        scrs.push_back(scores[i].item<float>());
+    }
+    // convert torch::Tensor to cv::Mat
+    cv::Mat mat_desc(descriptors.size(0), descriptors.size(1), CV_32FC1);
+    std::memcpy(mat_desc.data, descriptors.data_ptr(), sizeof(float) * descriptors.numel());
+    desc = mat_desc;
 }

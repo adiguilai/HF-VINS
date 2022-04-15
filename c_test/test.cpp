@@ -9,7 +9,7 @@
 
 using namespace std;
 
-void readImage(const string path, cv::Mat &image, cv::Mat &image_gray) {
+void readImage(const string& path, cv::Mat &image, cv::Mat &image_gray) {
     image = cv::imread(path, cv::IMREAD_COLOR);
     cv::cvtColor(image, image_gray, cv::COLOR_BGR2GRAY);
 }
@@ -24,12 +24,21 @@ int main() {
     std::vector<float> scrs_1, scrs_2;
     cv::Mat local_desc_1, local_desc_2, global_desc_1, global_desc_2;
 
-    readImage("../../night.jpg", image_1, image_gray_1);
-    readImage("../../day.jpg", image_2, image_gray_2);
+    readImage("../../day.jpg", image_1, image_gray_1);
+    readImage("../../night.jpg", image_2, image_gray_2);
 
+    TicToc t_ld;
     SuperPoint::Extract(image_gray_1, kpts_1, scrs_1, local_desc_1);
-    SuperPoint::Extract(image_gray_2, kpts_2, scrs_2, local_desc_2);
+    printf("Extracting SuperPoint and local descriptor took %f ms\n", t_ld.toc());
+
+    TicToc t_ud;
+    cv::goodFeaturesToTrack(image_gray_2, kpts_2, 500, 0.01, 10);
+    UltraPoint::Extract(image_gray_2, kpts_2, scrs_2, local_desc_2);
+    printf("Just extracting local descriptor took %f ms\n", t_ld.toc());
+
+    TicToc t_gd;
     NetVLAD::Extract(image_1, global_desc_1);
+    printf("Extracting global descriptor took %f ms\n", t_gd.toc());
     NetVLAD::Extract(image_2, global_desc_2);
 
     std::vector<int> match_index;
@@ -39,7 +48,7 @@ int main() {
               kpts_2, scrs_2, local_desc_2, image_gray_2.rows, image_gray_2.cols,
               match_index, match_score
     );
-    printf("match took %f ms\n", t_match.toc());
+    printf("Matching took %f ms\n", t_match.toc());
     printf("cos sim: %f\n", global_desc_1.dot(global_desc_2));
 
     vector<cv::KeyPoint> kpts1, kpts2;

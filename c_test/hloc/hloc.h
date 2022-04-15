@@ -9,10 +9,11 @@
 #define SuperPointPath "../../models/SuperPoint_1024.pt"
 #define NetVLADPath "../../models/NetVLAD.pt"
 #define SuperGluePath "../../models/SuperGlue_outdoor.pt"
+#define UltraPointPath "../../models/UltraPoint.pt"
 
 class SuperPoint {
 public:
-    static SuperPoint& Get();
+    static SuperPoint& self();
     static void Extract(
             const cv::Mat &image,
             std::vector<cv::Point2f> &kpts,
@@ -33,7 +34,7 @@ private:
 
 class NetVLAD {
 public:
-    static NetVLAD& Get();
+    static NetVLAD& self();
     static void Extract(
             const cv::Mat &image,
             cv::Mat &desc
@@ -50,7 +51,7 @@ private:
 
 class SuperGlue {
 public:
-    static SuperGlue& Get();
+    static SuperGlue& self();
     static void Match(
             std::vector<cv::Point2f> &kpts0,
             std::vector<float> &scrs0,
@@ -77,5 +78,25 @@ private:
             int height1, int width1,
             std::vector<int> &match_index,
             std::vector<float> &match_score
+    );
+};
+
+class UltraPoint {
+public:
+    static UltraPoint& self();
+    static void Extract(
+            const cv::Mat &image,
+            std::vector<cv::Point2f> &kpts,
+            std::vector<float> &scrs,
+            cv::Mat &desc
+    );
+private:
+    torch::jit::script::Module model;
+    UltraPoint();
+    void IExtract(
+            const cv::Mat &image,
+            std::vector<cv::Point2f> &kpts,
+            std::vector<float> &scrs,
+            cv::Mat &desc
     );
 };
