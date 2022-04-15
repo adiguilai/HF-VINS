@@ -24,8 +24,8 @@ int main() {
     std::vector<float> scrs_1, scrs_2;
     cv::Mat local_desc_1, local_desc_2, global_desc_1, global_desc_2;
 
-    readImage("../../day.jpg", image_1, image_gray_1);
-    readImage("../../night.jpg", image_2, image_gray_2);
+    readImage("../../night.jpg", image_1, image_gray_1);
+    readImage("../../day.jpg", image_2, image_gray_2);
 
     TicToc t_ld;
     SuperPoint::Extract(image_gray_1, kpts_1, scrs_1, local_desc_1);
@@ -66,7 +66,7 @@ int main() {
 
     cv::Mat out_image;
     cv::drawMatches(image_1, kpts1, image_2, kpts2, match, out_image);
-    cv::resize(out_image, out_image, cv::Size(), 0.3, 0.3);
+    cv::resize(out_image, out_image, cv::Size(), 0.5, 0.5);
     cv::imshow("matches", out_image);
     cv::waitKey(0);
 

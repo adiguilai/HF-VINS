@@ -15,5 +15,11 @@ using **[Hierarchical-Localization](https://github.com/cvg/Hierarchical-Localiza
 
 ## **visualization**
 
+night: SuperPoint keypoints + SuperPoint descriptors
+
+day: goodFeaturesToTrack keypoints +  + SuperPoint descriptors (I call it UltraPoint, because the model just extracts the descriptors, it's not that super)
+
+using SuperGlue match those keypoints
+
 ![screenshot](screenshot.png)
 
