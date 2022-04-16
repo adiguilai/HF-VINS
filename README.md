@@ -22,7 +22,7 @@ using SuperGlue match those keypoints
 - [x] Rewrite VINS-Mono/pose_graph/keyframe
 - [ ] Rewrite VINS-Mono/pose_graph/*
 
-The initialisation of these Singleton's models is done on the first call, which makes the back-end stuck for a while at the beginning.
+The initialisation of those models is done before the first call, which makes the back-end stuck for a while at the beginning.
 
 ![screenshot2](screenshot2.png)
 
