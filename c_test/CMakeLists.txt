@@ -21,5 +21,5 @@ find_package(OpenCV REQUIRED)
 add_executable(test
         test.cpp
         hloc/hloc.cpp
-        )
+        hloc/hlocDatabase.h)
 target_link_libraries(test ${CUDA_LIBRARIES} ${TORCH_LIBRARIES} ${OpenCV_LIBS})
