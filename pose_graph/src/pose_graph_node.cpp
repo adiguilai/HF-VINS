@@ -437,7 +437,7 @@ void command()
         if (c == 's')
         {
             m_process.lock();
-            posegraph.savePoseGraph();
+            // posegraph.savePoseGraph();
             m_process.unlock();
             printf("save pose graph finish\nyou can set 'load_previous_pose_graph' to 1 in the config file to reuse it next time\n");
             // printf("program shutting down...\n");
@@ -483,12 +483,12 @@ int main(int argc, char **argv)
         ROW = fsSettings["image_height"];
         COL = fsSettings["image_width"];
         std::string pkg_path = ros::package::getPath("pose_graph");
-        string vocabulary_file = pkg_path + "/../support_files/brief_k10L6.bin";
-        cout << "vocabulary_file" << vocabulary_file << endl;
-        posegraph.loadVocabulary(vocabulary_file);
+        // string vocabulary_file = pkg_path + "/../support_files/brief_k10L6.bin";
+        // cout << "vocabulary_file" << vocabulary_file << endl;
+        // posegraph.loadVocabulary(vocabulary_file);
 
-        BRIEF_PATTERN_FILE = pkg_path + "/../support_files/brief_pattern.yml";
-        cout << "BRIEF_PATTERN_FILE" << BRIEF_PATTERN_FILE << endl;
+        // BRIEF_PATTERN_FILE = pkg_path + "/../support_files/brief_pattern.yml";
+        // cout << "BRIEF_PATTERN_FILE" << BRIEF_PATTERN_FILE << endl;
         m_camera = camodocal::CameraFactory::instance()->generateCameraFromYamlFile(config_file.c_str());
 
         fsSettings["image_topic"] >> IMAGE_TOPIC;        
@@ -501,27 +501,30 @@ int main(int argc, char **argv)
         FileSystemHelper::createDirectoryIfNotExists(VINS_RESULT_PATH.c_str());
 
         VISUALIZE_IMU_FORWARD = fsSettings["visualize_imu_forward"];
-        LOAD_PREVIOUS_POSE_GRAPH = fsSettings["load_previous_pose_graph"];
+        // LOAD_PREVIOUS_POSE_GRAPH = fsSettings["load_previous_pose_graph"];
+        LOAD_PREVIOUS_POSE_GRAPH = false;
         FAST_RELOCALIZATION = fsSettings["fast_relocalization"];
         VINS_RESULT_PATH = VINS_RESULT_PATH + "/vins_result_loop.csv";
         std::ofstream fout(VINS_RESULT_PATH, std::ios::out);
         fout.close();
         fsSettings.release();
 
-        if (LOAD_PREVIOUS_POSE_GRAPH)
-        {
-            printf("load pose graph\n");
-            m_process.lock();
-            posegraph.loadPoseGraph();
-            m_process.unlock();
-            printf("load pose graph finish\n");
-            load_flag = 1;
-        }
-        else
-        {
-            printf("no previous pose graph\n");
-            load_flag = 1;
-        }
+        // if (LOAD_PREVIOUS_POSE_GRAPH)
+        // {
+        //     printf("load pose graph\n");
+        //     m_process.lock();
+        //     posegraph.loadPoseGraph();
+        //     m_process.unlock();
+        //     printf("load pose graph finish\n");
+        //     load_flag = 1;
+        // }
+        // else
+        // {
+        //     printf("no previous pose graph\n");
+        //     load_flag = 1;
+        // }
+        printf("no previous pose graph\n");
+        load_flag = 1;
     }
 
     fsSettings.release();

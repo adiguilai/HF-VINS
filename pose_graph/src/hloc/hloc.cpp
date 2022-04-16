@@ -6,9 +6,7 @@ SuperPoint &SuperPoint::self() {
 }
 
 SuperPoint::SuperPoint() {
-    TicToc t_load;
     model = torch::jit::load(SuperPointPath);
-    std::cout << "Load " << SuperPointPath << " in " << t_load.toc() << "ms" << std::endl;
 }
 
 void SuperPoint::Extract(const cv::Mat &image, std::vector<cv::Point2f> &kpts, std::vector<float> &scrs, cv::Mat &desc) {
@@ -75,9 +73,7 @@ NetVLAD &NetVLAD::self() {
 }
 
 NetVLAD::NetVLAD() {
-    TicToc t_load;
     model = torch::jit::load(NetVLADPath);
-    std::cout << "Load " << NetVLADPath << " in " << t_load.toc() << "ms" << std::endl;
 }
 
 void NetVLAD::Extract(const cv::Mat &image, cv::Mat &desc) {
@@ -86,6 +82,7 @@ void NetVLAD::Extract(const cv::Mat &image, cv::Mat &desc) {
 
 void NetVLAD::IExtract(const cv::Mat &image, cv::Mat &desc) {
     cv::Mat _image = image.clone();
+    cv::cvtColor(_image, _image, cv::COLOR_GRAY2BGR);
     // resize image if size > max size (1024)
     // record the original size
     float scale = 1;
@@ -131,9 +128,7 @@ SuperGlue &SuperGlue::self() {
 }
 
 SuperGlue::SuperGlue() {
-    TicToc t_load;
     model = torch::jit::load(SuperGluePath);
-    std::cout << "Load " << SuperGluePath << " in " << t_load.toc() << "ms" << std::endl;
 }
 
 void SuperGlue::Match(std::vector<cv::Point2f> &kpts0, std::vector<float> &scrs0, cv::Mat &desc0, int height0, int width0,
@@ -185,9 +180,7 @@ UltraPoint &UltraPoint::self() {
 }
 
 UltraPoint::UltraPoint() {
-    TicToc t_load;
     model = torch::jit::load(UltraPointPath);
-    std::cout << "Load " << UltraPointPath << " in " << t_load.toc() << "ms" << std::endl;
 }
 
 void UltraPoint::Extract(const cv::Mat &image, std::vector<cv::Point2f> &kpts, std::vector<float> &scrs, cv::Mat &desc) {

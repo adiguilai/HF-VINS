@@ -5,10 +5,10 @@ from Networks import netvlad, superpoint, superglue, ultrapoint
 if __name__ == "__main__":
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    model = superpoint.SuperPoint(nms_radius=3, max_keypoints=1024).eval().to(device)
+    model = superpoint.SuperPoint(nms_radius=3, max_keypoints=256).eval().to(device)
     scripted_module = torch.jit.script(model)
-    scripted_module.save("models/SuperPoint_1024.pt")
-    print("SuperPoint_1024 Converted")
+    scripted_module.save("models/SuperPoint_256.pt")
+    print("SuperPoint_256 Converted")
 
     # model = superglue.SuperGlue(weights='outdoor', sinkhorn_iterations=50).eval().to(device)
     # scripted_module = torch.jit.script(model)
@@ -20,7 +20,7 @@ if __name__ == "__main__":
     # scripted_module.save("models/NetVLAD.pt")
     # print("NetVLAD Converted")
 
-    model = ultrapoint.UltraPoint().eval().to(device)
-    scripted_module = torch.jit.script(model)
-    scripted_module.save("models/UltraPoint.pt")
-    print("UltraPoint Converted")
+    # model = ultrapoint.UltraPoint().eval().to(device)
+    # scripted_module = torch.jit.script(model)
+    # scripted_module.save("models/UltraPoint.pt")
+    # print("UltraPoint Converted")

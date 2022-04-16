@@ -1,15 +1,18 @@
-#include <torch/script.h>
+#ifndef TEST_HLOC_H
+#define TEST_HLOC_H
 
+#include <torch/script.h>
+#include <ros/ros.h>
 #include <opencv2/core.hpp>
 #include <opencv2/features2d/features2d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/dnn/dnn.hpp>
 #include "../utility/tic_toc.h"
 
-#define SuperPointPath "../../models/SuperPoint_1024.pt"
-#define NetVLADPath "../../models/NetVLAD.pt"
-#define SuperGluePath "../../models/SuperGlue_outdoor.pt"
-#define UltraPointPath "../../models/UltraPoint.pt"
+#define SuperPointPath "/home/jesse/catkin_ws/src/HF-VINS/models/SuperPoint_256.pt"
+#define NetVLADPath "/home/jesse/catkin_ws/src/HF-VINS/models/NetVLAD.pt"
+#define SuperGluePath "/home/jesse/catkin_ws/src/HF-VINS/models/SuperGlue_outdoor.pt"
+#define UltraPointPath "/home/jesse/catkin_ws/src/HF-VINS/models/UltraPoint.pt"
 
 class SuperPoint {
 public:
@@ -100,3 +103,5 @@ private:
             cv::Mat &desc
     );
 };
+
+#endif //TEST_HLOC_H

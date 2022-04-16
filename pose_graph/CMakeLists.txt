@@ -6,6 +6,7 @@ set(CMAKE_CXX_FLAGS "-std=c++14")
 #-DEIGEN_USE_MKL_ALL")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -Wall -g")
 
+set(CMAKE_CUDA_COMPILER  /usr/local/cuda-11.6/bin/nvcc)
 find_package(CUDA)
 
 # set your own libtorch path
@@ -47,6 +48,7 @@ add_executable(pose_graph
         src/keyframe.cpp
         src/utility/CameraPoseVisualization.cpp
         src/hloc/hloc.cpp
+        src/hloc/hlocDatabase.h
         )
 
 target_link_libraries(pose_graph ${catkin_LIBRARIES}  ${OpenCV_LIBS} ${CERES_LIBRARIES} ${CUDA_LIBRARIES} ${TORCH_LIBRARIES})

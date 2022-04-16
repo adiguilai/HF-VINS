@@ -19,18 +19,14 @@
 #include "utility/utility.h"
 #include "utility/CameraPoseVisualization.h"
 #include "utility/tic_toc.h"
-#include "ThirdParty/DBoW/DBoW2.h"
-#include "ThirdParty/DVision/DVision.h"
-#include "ThirdParty/DBoW/TemplatedDatabase.h"
-#include "ThirdParty/DBoW/TemplatedVocabulary.h"
+#include "hloc/hloc.h"
+#include "hloc/hlocDatabase.h"
 
 
 #define SHOW_S_EDGE false
 #define SHOW_L_EDGE true
 #define SAVE_LOOP_PATH true
 
-using namespace DVision;
-using namespace DBoW2;
 
 class PoseGraph
 {
@@ -40,14 +36,13 @@ public:
 	void registerPub(ros::NodeHandle &n);
 	void addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop);
 	void loadKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop);
-	void loadVocabulary(std::string voc_path);
 	void updateKeyFrameLoop(int index, Eigen::Matrix<double, 8, 1 > &_loop_info);
 	KeyFrame* getKeyFrame(int index);
 	nav_msgs::Path path[10];
 	nav_msgs::Path base_path;
 	CameraPoseVisualization* posegraph_visualization;
-	void savePoseGraph();
-	void loadPoseGraph();
+	// void savePoseGraph();
+	// void loadPoseGraph();
 	void publish();
 	Vector3d t_drift;
 	double yaw_drift;
@@ -77,8 +72,7 @@ private:
 	int earliest_loop_index;
 	int base_sequence;
 
-	BriefDatabase db;
-	BriefVocabulary* voc;
+	hlocDatabase db;
 
 	ros::Publisher pub_pg_path;
 	ros::Publisher pub_base_path;

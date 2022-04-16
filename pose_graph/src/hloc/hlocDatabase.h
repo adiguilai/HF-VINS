@@ -11,7 +11,7 @@
 using namespace std;
 
 /// Id of entries of the database
-typedef unsigned int EntryId;
+typedef int EntryId;
 
 class Result {
 public:
@@ -121,19 +121,7 @@ public:
     static inline bool ltId(const Result &a, const Result &b) {
         return a.Id < b.Id;
     }
-
-    /**
-     * Prints a string version of the result
-     * @param os ostream
-     * @param ret Result to print
-     */
-    friend std::ostream &operator<<(std::ostream &os, const Result &ret);
 };
-
-ostream &operator<<(ostream &os, const Result &ret) {
-    os << "<EntryId: " << ret.Id << ", Score: " << ret.Score << ">";
-    return os;
-}
 
 class hlocDatabase {
 public:
@@ -142,7 +130,7 @@ public:
     }
 
     void query(cv::Mat &global_descriptor, vector<Result> &ret, EntryId start_id, EntryId end_id) {
-        for (unsigned int i = start_id; i < end_id; i++) {
+        for (int i = start_id; i < end_id; i++) {
             ret.emplace_back(i, global_descriptor.dot(database[i]));
         }
         sort(ret.begin(), ret.end(), greater<>());
