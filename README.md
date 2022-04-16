@@ -12,7 +12,7 @@ using **[Hierarchical-Localization](https://github.com/cvg/Hierarchical-Localiza
 
 night: SuperPoint keypoints + SuperPoint descriptors
 
-day: goodFeaturesToTrack keypoints +  + SuperPoint descriptors (I call it UltraPoint, because the model just extracts the descriptors, it's not that super)
+day: goodFeaturesToTrack keypoints + SuperPoint descriptors (I call it UltraPoint, because the model just extracts the descriptors, it's not that super)
 
 using SuperGlue match those keypoints
 
@@ -20,9 +20,9 @@ using SuperGlue match those keypoints
 
 - [x] class Keyframe Database: It should include two functions 1) to get the similarity of a new frame to the global descriptors of all frames in the database 2) to add the current keyframe to the database.
 - [x] Rewrite VINS-Mono/pose_graph/keyframe
-- [ ] Rewrite VINS-Mono/pose_graph
+- [ ] Rewrite VINS-Mono/pose_graph/*
 
-The initialisation of these Singleton's models is done on the first call, which makes the back-end lag at the beginning.
+The initialisation of these Singleton's models is done on the first call, which makes the back-end stuck for a while at the beginning.
 
 ![screenshot2](screenshot2.png)
 
