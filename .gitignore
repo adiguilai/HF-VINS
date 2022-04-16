@@ -166,3 +166,4 @@ dmypy.json
 # model file
 *.pt
 Networks/weights
+/.vscode/
