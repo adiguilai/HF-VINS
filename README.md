@@ -26,5 +26,6 @@ The initialisation of these Singleton's models is done on the first call, which 
 
 ![screenshot2](screenshot2.png)
 
+- [ ] Visualisation of loop frame matching
 - [ ] Initialise all single instances of models at boot time
 - [ ] Add the function to save and load pose graph
