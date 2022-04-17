@@ -59,7 +59,6 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
 	int loop_index = -1;
     if (flag_detect_loop)
     {
-        TicToc tmp_t;
         loop_index = detectLoop(cur_kf, cur_kf->index);
     }
     else
@@ -68,7 +67,7 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     }
 	if (loop_index != -1)
 	{
-        //printf(" %d detect loop with %d \n", cur_kf->index, loop_index);
+        // printf("\n %d detect loop with %d", cur_kf->index, loop_index);
         KeyFrame* old_kf = getKeyFrame(loop_index);
 
         if (cur_kf->findConnection(old_kf))
@@ -217,7 +216,7 @@ void PoseGraph::loadKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     }
     if (loop_index != -1)
     {
-        printf(" %d detect loop with %d \n", cur_kf->index, loop_index);
+        // printf(" %d detect loop with %d \n", cur_kf->index, loop_index);
         KeyFrame* old_kf = getKeyFrame(loop_index);
         if (cur_kf->findConnection(old_kf))
         {
@@ -306,12 +305,9 @@ int PoseGraph::detectLoop(KeyFrame* keyframe, int frame_index)
         putText(compressed_image, "feature_num:" + to_string(feature_num), cv::Point2f(10, 10), cv::FONT_HERSHEY_SIMPLEX, 0.4, cv::Scalar(255));
         image_pool[frame_index] = compressed_image;
     }
-    TicToc tmp_t;
     //first query; then add this frame into database!
     vector<Result> ret;
-    TicToc t_query;
     db.query(keyframe->global_descriptors, ret, 4, frame_index - 50);
-    //printf("query time: %f", t_query.toc());
     //cout << "Searching for Image " << frame_index << ". " << ret << endl;
 
     TicToc t_add;
@@ -339,11 +335,11 @@ int PoseGraph::detectLoop(KeyFrame* keyframe, int frame_index)
         }
     }
     // a good match with its nerghbour
-    if (ret.size() >= 1 && ret[0].Score > 0.1)
+    if (ret.size() >= 1 && ret[0].Score > 0.4)
         for (unsigned int i = 1; i < ret.size(); i++)
         {
             //if (ret[i].Score > ret[0].Score * 0.3)
-            if (ret[i].Score > 0.05)
+            if (ret[i].Score > 0.3)
             {          
                 find_loop = true;
                 int tmp_index = ret[i].Id;
@@ -369,7 +365,7 @@ int PoseGraph::detectLoop(KeyFrame* keyframe, int frame_index)
         int min_index = -1;
         for (unsigned int i = 0; i < ret.size(); i++)
         {
-            if (min_index == -1 || (ret[i].Id < min_index && ret[i].Score > 0.015))
+            if (min_index == -1 || (ret[i].Id < min_index && ret[i].Score > 0.3))
                 min_index = ret[i].Id;
         }
         return min_index;

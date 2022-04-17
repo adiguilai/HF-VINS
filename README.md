@@ -7,7 +7,7 @@ using **[Hierarchical-Localization](https://github.com/cvg/Hierarchical-Localiza
 - [x] Read and run models in C++
 - [x] class SuperPointExtractor
 - [x] class NetVLADExtractor
-- [x] class SuperGlueMatcher?
+- [x] class SuperGlueMatcher
 - [x] class UltraPoint
 
 night: SuperPoint keypoints + SuperPoint descriptors
@@ -29,3 +29,11 @@ The initialisation of those models is done before the first call, which makes th
 - [x] Visualisation of loop frame matching
 - [x] Initialise all singleton instances of models at boot time
 - [ ] Add the function to save and load pose graph
+
+**There was a problem.**
+
+Our loop detection uses NetVLAD, which is independent of the extraction of feature points and descriptors. This leads to the fact that the number of matching keypoints obtained by SuperGlue is not sufficient for relocation when NetVLAD think that was a loop. Therefore, it is important to set thresholds for loop detection, and it is even somewhat problematic to set different thresholds for different data sets.
+
+I have now set a threshold of 0.4 on the EuRoC dataset and it looks OK.
+
+Another idea is to increase the number of SuperPoints in the loop frames, but this may cause more time cost.
