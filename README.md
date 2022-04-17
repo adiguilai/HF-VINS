@@ -27,5 +27,5 @@ The initialisation of those models is done before the first call, which makes th
 ![screenshot2](screenshot2.png)
 
 - [x] Visualisation of loop frame matching
-- [ ] Initialise all singleton instances of models at boot time
+- [x] Initialise all singleton instances of models at boot time
 - [ ] Add the function to save and load pose graph

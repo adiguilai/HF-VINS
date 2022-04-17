@@ -21,6 +21,7 @@
 #include "pose_graph.h"
 #include "utility/CameraPoseVisualization.h"
 #include "parameters.h"
+#include "hloc/hloc.h"
 #define SKIP_FIRST_CNT 10
 using namespace std;
 
@@ -65,6 +66,22 @@ std::string VINS_RESULT_PATH;
 CameraPoseVisualization cameraposevisual(1, 0, 0, 1);
 Eigen::Vector3d last_t(-100, -100, -100);
 double last_image_time = -1;
+
+void init_hloc()
+{
+    cv::Mat image( 1024, 1024, CV_8UC1, cv::Scalar(0) );
+    std::vector<cv::Point2f> kpts;
+    std::vector<float> scrs;
+    cv::Mat local_desc, global_desc;
+    vector<int> match_index;
+    vector<float> match_score;
+    SuperPoint::Extract(image, kpts, scrs, local_desc);
+    UltraPoint::Extract(image, kpts, scrs, local_desc);
+    NetVLAD::Extract(image, global_desc);
+    SuperGlue::Match(kpts, scrs, local_desc, 1024, 1024,
+                     kpts, scrs, local_desc, 1024, 1024,
+                     match_index, match_score);
+}
 
 void new_sequence()
 {
@@ -489,6 +506,7 @@ int main(int argc, char **argv)
 
         // BRIEF_PATTERN_FILE = pkg_path + "/../support_files/brief_pattern.yml";
         // cout << "BRIEF_PATTERN_FILE" << BRIEF_PATTERN_FILE << endl;
+        init_hloc();
         m_camera = camodocal::CameraFactory::instance()->generateCameraFromYamlFile(config_file.c_str());
 
         fsSettings["image_topic"] >> IMAGE_TOPIC;        

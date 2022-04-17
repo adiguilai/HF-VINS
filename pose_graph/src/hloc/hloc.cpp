@@ -7,6 +7,7 @@ SuperPoint &SuperPoint::self() {
 
 SuperPoint::SuperPoint() {
     model = torch::jit::load(SuperPointPath);
+    ROS_WARN("Loaded SuperPoint");
 }
 
 void SuperPoint::Extract(const cv::Mat &image, std::vector<cv::Point2f> &kpts, std::vector<float> &scrs, cv::Mat &desc) {
@@ -14,6 +15,8 @@ void SuperPoint::Extract(const cv::Mat &image, std::vector<cv::Point2f> &kpts, s
 }
 
 void SuperPoint::IExtract(const cv::Mat &image, std::vector<cv::Point2f> &kpts, std::vector<float> &scrs, cv::Mat &desc) {
+    kpts.clear();
+    scrs.clear();
     cv::Mat image_gray = image.clone();
     // resize image if size > max size (1024)
     // record the original size
@@ -74,6 +77,7 @@ NetVLAD &NetVLAD::self() {
 
 NetVLAD::NetVLAD() {
     model = torch::jit::load(NetVLADPath);
+    ROS_WARN("Loaded NetVLAD");
 }
 
 void NetVLAD::Extract(const cv::Mat &image, cv::Mat &desc) {
@@ -129,6 +133,7 @@ SuperGlue &SuperGlue::self() {
 
 SuperGlue::SuperGlue() {
     model = torch::jit::load(SuperGluePath);
+    ROS_WARN("Loaded SuperGlue");
 }
 
 void SuperGlue::Match(std::vector<cv::Point2f> &kpts0, std::vector<float> &scrs0, cv::Mat &desc0, int height0, int width0,
@@ -142,6 +147,8 @@ void SuperGlue::Match(std::vector<cv::Point2f> &kpts0, std::vector<float> &scrs0
 void SuperGlue::IMatch(std::vector<cv::Point2f> &kpts0, std::vector<float> &scrs0, cv::Mat &desc0, int height0, int width0,
                   std::vector<cv::Point2f> &kpts1, std::vector<float> &scrs1, cv::Mat &desc1, int height1, int width1,
                   std::vector<int> &match_index, std::vector<float> &match_score) {
+    match_index.clear();
+    match_score.clear();
     auto k0 = torch::from_blob(kpts0.data(), {1, int(kpts0.size()), 2}).to(torch::kCUDA);
     auto k1 = torch::from_blob(kpts1.data(), {1, int(kpts1.size()), 2}).to(torch::kCUDA);
     auto s0 = torch::from_blob(scrs0.data(), {1, int(scrs0.size())}).to(torch::kCUDA);
@@ -181,6 +188,7 @@ UltraPoint &UltraPoint::self() {
 
 UltraPoint::UltraPoint() {
     model = torch::jit::load(UltraPointPath);
+    ROS_WARN("Loaded UltraPoint");
 }
 
 void UltraPoint::Extract(const cv::Mat &image, std::vector<cv::Point2f> &kpts, std::vector<float> &scrs, cv::Mat &desc) {
@@ -189,6 +197,7 @@ void UltraPoint::Extract(const cv::Mat &image, std::vector<cv::Point2f> &kpts, s
 
 void UltraPoint::IExtract(const cv::Mat &image, std::vector<cv::Point2f> &kpts, std::vector<float> &scrs,
                           cv::Mat &desc) {
+    scrs.clear();
     cv::Mat image_gray = image.clone();
     auto keypoints_tensor = torch::from_blob(kpts.data(), {1, int(kpts.size()), 2}).to(torch::kCUDA);
     // resize image if size > max size (1024)
