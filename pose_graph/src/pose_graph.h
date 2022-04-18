@@ -24,7 +24,7 @@
 
 
 #define SHOW_S_EDGE false
-#define SHOW_L_EDGE true
+#define SHOW_L_EDGE false
 #define SAVE_LOOP_PATH false
 
 

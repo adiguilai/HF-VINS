@@ -167,3 +167,4 @@ dmypy.json
 *.pt
 Networks/weights
 /.vscode/
+.idea/
